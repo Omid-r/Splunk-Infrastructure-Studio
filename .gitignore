@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.next/
+out/
+dist/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime data (SQLite DB, runtime state) — never commit
+data/
+*.sqlite
+*.sqlite3
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Downloaded reference material (re-obtain via: see docs/reference-catalog.md)
+reference/
