@@ -1,6 +1,7 @@
 import { all, get, run, tx } from '@/server/db';
 import { newId } from '@/server/core/crypto';
 import { audit } from '@/server/core/audit';
+import { buildTopologySnapshot } from '@/server/services/topology';
 import type { Host } from '@/lib/types';
 
 interface DemoHost {
@@ -86,6 +87,7 @@ export function loadDemoDataset(workspaceId: string, actor: string): number {
       );
     }
   });
+  buildTopologySnapshot(workspaceId);
   audit(actor, 'demo.load', `workspace:${workspaceId}`, 'success', newId('corr'));
   return DEMO_HOSTS.length;
 }
@@ -103,6 +105,7 @@ export function removeDemoDataset(workspaceId: string, actor: string): void {
       run('DELETE FROM hosts WHERE id = ?', h.id);
     }
   });
+  buildTopologySnapshot(workspaceId);
   audit(actor, 'demo.remove', `workspace:${workspaceId}`, 'success', newId('corr'));
 }
 

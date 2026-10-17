@@ -93,20 +93,42 @@ export async function provisionLab(ctx: LabContext, onProgress: (pct: number, ms
   onProgress(95, 'محیط آزمایشگاهی محلی ساخته شد');
 }
 
-export async function startLabListener(workspaceId: string, port: number): Promise<void> {
+function bindServer(server: net.Server, port: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const onError = (err: Error) => {
+      server.close();
+      reject(err);
+    };
+    server.once('error', onError);
+    server.listen(port, '127.0.0.1', () => {
+      server.off('error', onError);
+      server.on('error', () => {});
+      const addr = server.address();
+      resolve(typeof addr === 'object' && addr ? addr.port : port);
+    });
+  });
+}
+
+export async function startLabListener(workspaceId: string, port: number): Promise<number> {
   const eventsLog = path.join(labRoot(workspaceId), 'var', 'log', 'splunk-lab', 'lab-events.log');
   fs.mkdirSync(path.dirname(eventsLog), { recursive: true });
   await stopLabListener(workspaceId);
-  const server = net.createServer((sock) => {
+  const onConnection = (sock: net.Socket) => {
     sock.on('data', (chunk) => {
       fs.appendFileSync(eventsLog, chunk.toString());
     });
-  });
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port, '127.0.0.1', () => resolve());
-  });
+  };
+  let server = net.createServer(onConnection);
+  let bound: number;
+  try {
+    bound = await bindServer(server, port);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw e;
+    server = net.createServer(onConnection);
+    bound = await bindServer(server, 0);
+  }
   listeners.set(workspaceId, server);
+  return bound;
 }
 
 export async function stopLabListener(workspaceId: string): Promise<void> {
@@ -117,26 +139,39 @@ export async function stopLabListener(workspaceId: string): Promise<void> {
   }
 }
 
-export async function sendLabEvent(workspaceId: string, port: number, line: string): Promise<boolean> {
+function sendOnce(port: number, payload: string): Promise<boolean> {
   return new Promise((resolve) => {
+    let settled = false;
     const sock = new net.Socket();
-    let ok = false;
-    sock.setTimeout(1500);
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (ok) sock.end();
+      else sock.destroy();
+      resolve(ok);
+    };
+    sock.setTimeout(1200);
     sock.once('connect', () => {
-      sock.write(line.endsWith('\n') ? line : `${line}\n`, () => {
-        ok = true;
-        sock.end();
-      });
+      sock.write(payload, (err) => finish(!err));
     });
-    sock.once('timeout', () => { sock.destroy(); resolve(false); });
-    sock.once('error', () => resolve(false));
-    sock.once('close', () => resolve(ok));
+    sock.once('timeout', () => finish(false));
+    sock.once('error', () => finish(false));
+    sock.once('close', () => finish(false));
     try {
       sock.connect(port, '127.0.0.1');
     } catch {
-      resolve(false);
+      finish(false);
     }
   });
+}
+
+export async function sendLabEvent(workspaceId: string, port: number, line: string): Promise<boolean> {
+  const payload = line.endsWith('\n') ? line : `${line}\n`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (await sendOnce(port, payload)) return true;
+    await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+  }
+  return false;
 }
 
 export async function validateLab(workspaceId: string, listenerPort: number): Promise<ValidationItem[]> {
@@ -159,11 +194,26 @@ export async function validateLab(workspaceId: string, listenerPort: number): Pr
       detail: `${confOk}/${manifest.nodes.length} نود فایل server.conf دارند`,
     });
   }
-  const sent = await sendLabEvent(workspaceId, listenerPort, `<14>1 ${new Date().toISOString()} lab.test splunk-lab - - - test event from validation`);
+  const marker = `validation-probe-${Date.now().toString(36)}`;
+  const sent = await sendLabEvent(workspaceId, listenerPort, `<14>1 ${new Date().toISOString()} lab.test splunk-lab - - - ${marker}`);
+  const eventsLog = path.join(labRoot(workspaceId), 'var', 'log', 'splunk-lab', 'lab-events.log');
+  let received = false;
+  for (let i = 0; i < 10 && !received; i++) {
+    try {
+      received = fs.readFileSync(eventsLog, 'utf8').includes(marker);
+    } catch {
+      received = false;
+    }
+    if (!received) await new Promise((r) => setTimeout(r, 100));
+  }
   out.push({
     check: 'جریان داده آزمایشی (test event ingest)',
-    status: sent ? 'pass' : 'fail',
-    detail: sent ? 'رویداد آزمایشی روی گیرنده محلی نوشته شد' : `گیرنده محلی روی پورت ${listenerPort} پاسخ نداد`,
+    status: received ? 'pass' : 'fail',
+    detail: received
+      ? `رویداد آزمایشی روی گیرنده محلی (127.0.0.1:${listenerPort}) دریافت و در lab-events.log ثبت شد`
+      : sent
+        ? 'اتصال به گیرنده محلی برقرار شد اما رویداد در lab-events.log ثبت نشد'
+        : `گیرنده محلی روی پورت ${listenerPort} پاسخ نداد`,
   });
   const outOk = fs.existsSync(path.join(labRoot(workspaceId), 'etc', 'outputs.conf'));
   out.push({ check: 'پیکربندی outputs.conf', status: outOk ? 'pass' : 'not_verified', detail: outOk ? 'فایل یافت شد' : 'اجرای تست جریان داده واقعی در دسترس نیست' });

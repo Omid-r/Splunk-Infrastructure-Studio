@@ -9,11 +9,15 @@ import type { TopologySnapshot } from '@/lib/types';
 
 export default function TopologyPage() {
   const [topology, setTopology] = useState<TopologySnapshot | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'demo' | 'real'>('all');
 
   const load = useCallback(() => {
-    api<{ topology: TopologySnapshot }>('/api/topology').then((r) => setTopology(r.topology)).catch(() => {});
+    api<{ topology: TopologySnapshot | null }>('/api/topology')
+      .then((r) => setTopology(r.topology))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -57,9 +61,9 @@ export default function TopologyPage() {
         }
       />
 
-      {!filtered ? (
+      {!loaded ? (
         <div className="flex h-96 items-center justify-center"><Spinner /></div>
-      ) : filtered.nodes.length === 0 ? (
+      ) : !filtered || filtered.nodes.length === 0 ? (
         <Card>
           <EmptyState
             title="هنوز توپولوژی‌ای ساخته نشده"

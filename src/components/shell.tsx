@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -50,8 +50,11 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [demoBanner, setDemoBanner] = useState(true);
+
+  useEffect(() => setMounted(true), []);
 
   const logout = async () => {
     await api('/api/auth', { method: 'DELETE' });
@@ -137,7 +140,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
                 className="focus-ring rounded-xl p-2 text-ink-500 hover:bg-ink-900/5 dark:text-ink-300 dark:hover:bg-white/8"
                 aria-label="تغییر پوسته"
               >
-                {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+                {mounted ? (theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />) : <span className="block size-4.5" />}
               </button>
               <div className="relative">
                 <button

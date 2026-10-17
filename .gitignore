@@ -25,6 +25,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+*.tsbuildinfo
 
 # Downloaded reference material (re-obtain via: see docs/reference-catalog.md)
 reference/

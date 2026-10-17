@@ -111,7 +111,7 @@ export default function DeploymentPage() {
               />
             </Card>
           ) : (
-            <DeploymentMonitor job={active} onChange={setActive} />
+            <DeploymentMonitor job={active} onChange={setActive} onDone={load} />
           )}
 
           {deployments && deployments.filter((d) => !active || d.id !== active.id).length > 0 && (
@@ -134,22 +134,23 @@ export default function DeploymentPage() {
   );
 }
 
-function DeploymentMonitor({ job, onChange }: { job: DeploymentJob; onChange: (d: DeploymentJob) => void }) {
+function DeploymentMonitor({ job, onChange, onDone }: { job: DeploymentJob; onChange: (d: DeploymentJob) => void; onDone: () => void }) {
   const [events, setEvents] = useState<{ id: string; message: string; level: string; created_at: string }[]>([]);
   const [tab, setTab] = useState<'run' | 'preflight' | 'validation'>('run');
   const live = job.status === 'running' || job.status === 'queued';
 
   useEffect(() => {
+    setEvents([]);
     const unsub = subscribeEvents(`/api/deployments/${job.id}/events`, {
       snapshot: ((d: { deployment: DeploymentJob }) => onChange(d.deployment)) as never,
       event: ((ev: { id: string; message: string; level: string; created_at: string }) => {
-        setEvents((p) => [...p.slice(-150), ev]);
+        setEvents((p) => (p.some((x) => x.id === ev.id) ? p : [...p.slice(-150), ev]));
       }) as never,
-      done: (() => {}) as never,
+      done: (() => onDone()) as never,
       onError: () => {},
     });
     return unsub;
-  }, [job.id, onChange]);
+  }, [job.id, onChange, onDone]);
 
   const cancel = async () => {
     await api(`/api/deployments/${job.id}`, { method: 'DELETE' }).catch(() => {});

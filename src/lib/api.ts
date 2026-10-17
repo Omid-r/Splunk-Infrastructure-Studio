@@ -24,19 +24,26 @@ export function subscribeEvents(url: string, handlers: {
   onError?: () => void;
 }): () => void {
   const source = new EventSource(url);
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    source.close();
+  };
   (Object.keys(handlers) as (keyof typeof handlers)[]).forEach((key) => {
     if (key === 'onError') return;
     source.addEventListener(key, (e) => {
       const fn = handlers[key] as ((data: never) => void) | undefined;
       if (fn) {
         try {
-          fn(JSON.parse((e as MessageEvent).data));
+          fn(JSON.parse((e as MessageEvent).data) as never);
         } catch {
           /* ignore parse errors */
         }
       }
+      if (key === 'done') close();
     });
   });
   source.onerror = () => handlers.onError?.();
-  return () => source.close();
+  return close;
 }

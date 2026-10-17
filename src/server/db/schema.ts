@@ -220,9 +220,17 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `,
   },
+  {
+    id: '0002_audit_event_ids',
+    sql: `
+UPDATE audit_events SET id = 'aud_' || lower(hex(randomblob(9))) WHERE id IS NULL;
+`,
+  },
 ];
 
-export function runMigrations(db: { exec: (sql: string) => void; prepare: (sql: string) => { get: (...p: unknown[]) => unknown; run: (...p: unknown[]) => unknown } }): void {
+import type { DatabaseSync } from 'node:sqlite';
+
+export function runMigrations(db: DatabaseSync): void {
   db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     id TEXT PRIMARY KEY,
     applied_at TEXT NOT NULL

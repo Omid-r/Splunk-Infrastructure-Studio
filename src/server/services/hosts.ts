@@ -26,7 +26,7 @@ export function dashboardStats(workspaceId: string): DashboardStats {
   const openPorts = get<{ n: number }>('SELECT COUNT(*) AS n FROM host_ports p JOIN hosts h ON h.id = p.host_id WHERE h.workspace_id = ?', workspaceId);
   const lastScan = get<{ created_at: string }>("SELECT created_at FROM scan_jobs WHERE workspace_id = ? AND demo = 0 ORDER BY created_at DESC LIMIT 1", workspaceId);
   const stale = get<{ n: number }>("SELECT COUNT(*) AS n FROM hosts WHERE workspace_id = ? AND last_seen_at < datetime('now', '-1 day')", workspaceId);
-  const networks = get<{ n: number }>("SELECT COUNT(DISTINCT substr(ip, 1, length(ip) - length(substr(ip, instr(ip,'.',-1)+1)) + 10)) AS n FROM hosts WHERE workspace_id = ?", workspaceId);
+  const networks = get<{ n: number }>("SELECT COUNT(DISTINCT rtrim(ip, '0123456789')) AS n FROM hosts WHERE workspace_id = ?", workspaceId);
   const deployments = get<{ total: number; failed: number }>("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0) AS failed FROM deployment_jobs WHERE workspace_id = ?", workspaceId);
   const scans = get<{ n: number }>('SELECT COUNT(*) AS n FROM scan_jobs WHERE workspace_id = ?', workspaceId);
   const hostsUp = get<{ n: number }>("SELECT COUNT(*) AS n FROM hosts WHERE workspace_id = ? AND health IN ('healthy','warning','critical')", workspaceId);

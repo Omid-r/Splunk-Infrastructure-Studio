@@ -21,12 +21,20 @@ export function dataDir(): string {
   return DATA_DIR;
 }
 
+// node:sqlite rows have a null prototype, which Next.js forbids passing to
+// Client Components — normalize every row to a plain object.
+function plain<T>(row: T): T {
+  return row && typeof row === 'object' ? ({ ...row } as T) : row;
+}
+
 export function all<T>(sql: string, ...params: unknown[]): T[] {
-  return getDb().prepare(sql).all(...(params as never[])) as T[];
+  const rows = getDb().prepare(sql).all(...(params as never[])) as T[];
+  return rows.map(plain);
 }
 
 export function get<T>(sql: string, ...params: unknown[]): T | undefined {
-  return getDb().prepare(sql).get(...(params as never[])) as T | undefined;
+  const row = getDb().prepare(sql).get(...(params as never[])) as T | undefined;
+  return row === undefined ? undefined : plain(row);
 }
 
 export function run(sql: string, ...params: unknown[]) {

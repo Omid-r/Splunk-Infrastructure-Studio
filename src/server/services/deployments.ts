@@ -112,10 +112,10 @@ async function runDeploymentAsync(id: string): Promise<void> {
       () => isCancelled('deployment_jobs', id)
     );
     if (isCancelled('deployment_jobs', id)) throw new Error('cancelled');
-    emitJobEvent(id, 'deployment', `راه‌اندازی گیرنده رویداد آزمایشی روی 127.0.0.1:${LAB_PORT}`, 'info');
-    await lab.startLabListener(d.workspace_id, LAB_PORT);
+    const boundPort = await lab.startLabListener(d.workspace_id, LAB_PORT);
+    emitJobEvent(id, 'deployment', `گیرنده رویداد آزمایشی روی 127.0.0.1:${boundPort} فعال شد`, 'info');
     run('UPDATE deployment_jobs SET progress = 98 WHERE id = ?', id);
-    const validation = await lab.validateLab(d.workspace_id, LAB_PORT);
+    const validation = await lab.validateLab(d.workspace_id, boundPort);
     run('UPDATE deployment_jobs SET validation = ?, progress = 100, status = ?, finished_at = ? WHERE id = ?',
       JSON.stringify(validation),
       validation.every((v) => v.status !== 'fail') ? 'success' : 'warning',

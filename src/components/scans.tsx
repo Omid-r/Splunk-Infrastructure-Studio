@@ -169,7 +169,7 @@ const STATUS_LABELS: Record<string, string> = { queued: 'در صف', running: '�
 
 export function ScanMonitor({ job, onChange }: { job: ScanJob; onChange: (job: ScanJob) => void }) {
   const [events, setEvents] = useState<{ id: string; message: string; level: string; created_at: string }[]>([]);
-  const [live, setLive] = useState<job.status === 'running' || job.status === 'queued');
+  const [live, setLive] = useState<boolean>(job.status === 'running' || job.status === 'queued');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

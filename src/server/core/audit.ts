@@ -1,5 +1,5 @@
 import { all, get, run } from '@/server/db';
-import { sha256 } from '@/server/core/crypto';
+import { newId, sha256 } from '@/server/core/crypto';
 import type { AuditEvent } from '@/lib/types';
 
 export function audit(actor: string, action: string, target: string, outcome: string, correlationId: string): void {
@@ -9,8 +9,8 @@ export function audit(actor: string, action: string, target: string, outcome: st
   const material = [actor, action, target, outcome, correlationId, createdAt, prevHash].join('|');
   const hash = sha256(material);
   run(
-    'INSERT INTO audit_events (actor, action, target, outcome, correlation_id, prev_hash, hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    actor, action, target, outcome, correlationId, prevHash, hash, createdAt
+    'INSERT INTO audit_events (id, actor, action, target, outcome, correlation_id, prev_hash, hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    newId('aud'), actor, action, target, outcome, correlationId, prevHash, hash, createdAt
   );
 }
 
