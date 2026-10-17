@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, Radar, Network, Server, Boxes, Rocket, ShieldCheck, ScrollText,
-  Settings, Sun, Moon, LogOut, ChevronDown, Sparkles, GitBranch,
+  Settings, Sun, Moon, LogOut, ChevronDown, Sparkles, GitBranch, FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button, Badge } from '@/components/ui';
@@ -29,6 +29,7 @@ const NAV = [
       { href: '/discovery', label: 'کشف کنترل‌شده', icon: Radar },
       { href: '/architecture', label: 'استودیو معماری Splunk', icon: Boxes },
       { href: '/deployment', label: 'استقرار و اعتبارسنجی', icon: Rocket },
+      { href: '/lab', label: 'آزمایشگاه زنده', icon: FlaskConical },
     ],
   },
   {

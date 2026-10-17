@@ -36,6 +36,8 @@ export function handleError(e: unknown): NextResponse {
   const err = e as Error & { code?: string };
   if (err.code === 'PREFLIGHT_BLOCKED') return fail('PREFLIGHT_BLOCKED', err.message, 409);
   if (err.code === 'FORBIDDEN') return fail('FORBIDDEN', err.message, 403);
+  if (err.code === 'NOT_FOUND') return fail('NOT_FOUND', err.message, 404);
+  if (err.code === 'INVALID_INPUT') return fail('INVALID_INPUT', err.message, 422);
   return fail('INTERNAL', err.message || 'خطای داخلی سرور', 500);
 }
 

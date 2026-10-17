@@ -238,3 +238,39 @@ export interface DashboardStats {
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
 }
+
+export interface LabForwardStat {
+  target: string;
+  ok: number;
+  fail: number;
+  lastError: string | null;
+}
+
+export interface LabNode {
+  id: string;
+  workspace_id: string;
+  name: string;
+  role: string;
+  conf_dir: string;
+  status: 'running' | 'stopped';
+  ingest_port: number | null;
+  mgmt_port: number | null;
+  events_stored: number;
+  last_started_at: string | null;
+  created_at: string;
+  events_received: number;
+  events_forwarded: number;
+  mode: 'store' | 'forward' | null;
+  forward_stats: LabForwardStat[];
+  started_at: string | null;
+}
+
+export interface LabSearchResult {
+  query: string;
+  searched_nodes: string[];
+  skipped_forwarders: string[];
+  matched: number;
+  events: { ts: string; node: string; raw: string }[];
+  per_node: Record<string, number>;
+  completed_at: string;
+}

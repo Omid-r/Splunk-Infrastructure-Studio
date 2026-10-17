@@ -226,6 +226,26 @@ CREATE TABLE IF NOT EXISTS settings (
 UPDATE audit_events SET id = 'aud_' || lower(hex(randomblob(9))) WHERE id IS NULL;
 `,
   },
+  {
+    id: '0003_lab_runtime',
+    sql: `
+CREATE TABLE IF NOT EXISTS lab_nodes (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+  name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  conf_dir TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'stopped',
+  ingest_port INTEGER,
+  mgmt_port INTEGER,
+  events_stored INTEGER NOT NULL DEFAULT 0,
+  last_started_at TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE (workspace_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_lab_nodes_ws ON lab_nodes(workspace_id);
+`,
+  },
 ];
 
 import type { DatabaseSync } from 'node:sqlite';

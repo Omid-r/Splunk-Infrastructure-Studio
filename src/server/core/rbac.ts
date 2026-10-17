@@ -10,7 +10,9 @@ export type Action =
   | 'audit.view'
   | 'admin.users'
   | 'settings.manage'
-  | 'demo.load';
+  | 'demo.load'
+  | 'lab.operate'
+  | 'lab.search';
 
 const MATRIX: Record<Action, Role[]> = {
   'workspace.manage': ['admin'],
@@ -23,6 +25,8 @@ const MATRIX: Record<Action, Role[]> = {
   'admin.users': ['admin'],
   'settings.manage': ['admin'],
   'demo.load': ['network_operator', 'splunk_admin', 'infra_admin', 'admin'],
+  'lab.operate': ['splunk_admin', 'infra_admin', 'admin'],
+  'lab.search': ['viewer', 'network_operator', 'splunk_admin', 'infra_admin', 'auditor', 'admin'],
 };
 
 export function can(role: Role, action: Action): boolean {
