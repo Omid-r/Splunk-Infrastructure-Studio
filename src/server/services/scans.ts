@@ -8,6 +8,7 @@ import { QUICK_PORTS, STANDARD_PORTS, mapLimit, serviceGuess, tcpProbe } from '@
 import { workspaceScopes } from '@/server/services/workspace';
 import { loadDemoDataset } from '@/server/services/demo';
 import { buildTopologySnapshot as buildSnapshot } from '@/server/services/topology';
+import { saveScanSnapshot, type SnapshotHost } from '@/server/services/snapshots';
 import type { ScanJob, ScanProfile } from '@/lib/types';
 
 const MAX_HOSTS = () => Number(process.env.SCAN_MAX_HOSTS ?? 1024);
@@ -67,9 +68,25 @@ export function createDemoScan(workspaceId: string, actor: string): ScanJob {
     jobId, workspaceId, actor, now, now, now
   );
   const loaded = loadDemoDataset(workspaceId, actor);
-  emitJobEvent(jobId, 'scan', `دیتاست نمایشی با ${loaded} سرور بارگذاری شد — DEMO DATA`, 'success');
+  const snap = saveScanSnapshot(workspaceId, jobId, demoSnapshotHosts(workspaceId), actor);
+  emitJobEvent(jobId, 'scan', `دیتاست نمایشی با ${loaded} سرور بارگذاری شد — DEMO DATA (snapshot: ${snap.host_count} هاست / ${snap.port_count} پورت)`, 'success');
   audit(actor, 'scan.demo', `scan:${jobId}`, 'success', newId('corr'));
   return getScan(jobId)!;
+}
+
+function demoSnapshotHosts(workspaceId: string): SnapshotHost[] {
+  const hosts = all<{ id: string; ip: string; hostname: string; os: string }>(
+    'SELECT id, ip, hostname, os FROM hosts WHERE workspace_id = ? AND is_demo = 1', workspaceId
+  );
+  return hosts.map((h) => ({
+    ip: h.ip,
+    hostname: h.hostname,
+    os: h.os,
+    source: 'demo' as const,
+    ports: all<{ port: number; service: string }>(
+      "SELECT port, service FROM host_ports WHERE host_id = ? AND state = 'open'", h.id
+    ),
+  }));
 }
 
 export function cancelScan(jobId: string, actor: string): void {
@@ -107,6 +124,7 @@ async function runScanAsync(jobId: string): Promise<void> {
     let scanned = 0;
     let hostsUp = 0;
     let openPortCount = 0;
+    const discovered: SnapshotHost[] = [];
 
     await mapLimit(uniqueHosts, cfg.concurrency, async (ip) => {
       if (isCancelled('scan_jobs', jobId)) throw new Error('cancelled');
@@ -126,6 +144,13 @@ async function runScanAsync(jobId: string): Promise<void> {
           }
         }
         upsertHostFromScan(job.workspace_id, jobId, ip, hostname, openPorts, job.profile);
+        discovered.push({
+          ip,
+          hostname,
+          os: 'Unknown',
+          source: 'scan',
+          ports: openPorts.map((p) => ({ port: p, service: serviceGuess(p) })),
+        });
       }
       if (scanned % 8 === 0 || scanned === uniqueHosts.length) {
         run('UPDATE scan_jobs SET scanned_hosts = ?, hosts_up = ?, open_ports = ?, progress = ? WHERE id = ?', scanned, hostsUp, openPortCount, Math.round((scanned / uniqueHosts.length) * 100), jobId);
@@ -140,6 +165,8 @@ async function runScanAsync(jobId: string): Promise<void> {
     run("UPDATE scan_jobs SET status = 'success', progress = 100, finished_at = ? WHERE id = ?", finished, jobId);
     emitJobEvent(jobId, 'scan', `اسکن کامل شد: ${hostsUp} هاست فعال، ${openPortCount} پورت باز`, 'success');
     buildTopologySnapshot(job.workspace_id);
+    const snap = saveScanSnapshot(job.workspace_id, jobId, discovered, job.created_by);
+    emitJobEvent(jobId, 'scan', `snapshot این job ثبت شد: ${snap.host_count} هاست / ${snap.port_count} پورت — قابل مقایسه با job دیگر`, 'info');
   } catch (e) {
     const finished = new Date().toISOString();
     const cancelled = (e as Error).message === 'cancelled';

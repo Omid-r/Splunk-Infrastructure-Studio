@@ -314,3 +314,61 @@ export interface ToolboxRun {
   actor: string;
   created_at: string;
 }
+
+export interface SnapshotPort {
+  port: number;
+  service: string;
+}
+
+export interface SnapshotHost {
+  ip: string;
+  hostname: string;
+  os: string;
+  source: 'scan' | 'demo';
+  ports: SnapshotPort[];
+}
+
+export interface ScanSnapshot {
+  job_id: string;
+  workspace_id: string;
+  created_at: string;
+  host_count: number;
+  port_count: number;
+  hosts: SnapshotHost[];
+}
+
+export interface SnapshotSummary {
+  job_id: string;
+  created_at: string;
+  host_count: number;
+  port_count: number;
+  profile: string;
+  status: string;
+  demo: number;
+}
+
+export interface HostChange {
+  ip: string;
+  hostname_from: string;
+  hostname_to: string;
+  ports_added: SnapshotPort[];
+  ports_removed: SnapshotPort[];
+  service_changed: { port: number; from: string; to: string }[];
+}
+
+export interface SnapshotDiffMeta {
+  job_id: string;
+  created_at: string;
+  host_count: number;
+  port_count: number;
+  profile: string;
+}
+
+export interface SnapshotDiff {
+  from: SnapshotDiffMeta;
+  to: SnapshotDiffMeta;
+  added: SnapshotHost[];
+  removed: SnapshotHost[];
+  changed: HostChange[];
+  unchanged_hosts: number;
+}

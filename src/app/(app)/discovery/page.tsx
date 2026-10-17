@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PageHeader, Spinner, EmptyState } from '@/components/ui';
 import { NewScanForm, ScanMonitor } from '@/components/scans';
+import { SnapshotCompare } from '@/components/snapshot-compare';
 import { api } from '@/lib/api';
 import type { ScanJob } from '@/lib/types';
 
@@ -87,6 +88,8 @@ export default function DiscoveryPage() {
           ))}
         </div>
       </div>
+
+      <SnapshotCompare />
     </div>
   );
 }

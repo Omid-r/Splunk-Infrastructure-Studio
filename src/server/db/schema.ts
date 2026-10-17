@@ -289,6 +289,20 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
 CREATE INDEX IF NOT EXISTS idx_attempts_pair ON auth_attempts(username, ip, created_at);
 `,
   },
+  {
+    id: '0007_scan_snapshots',
+    sql: `
+CREATE TABLE IF NOT EXISTS scan_snapshots (
+  job_id TEXT PRIMARY KEY REFERENCES scan_jobs(id),
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+  created_at TEXT NOT NULL,
+  host_count INTEGER NOT NULL DEFAULT 0,
+  port_count INTEGER NOT NULL DEFAULT 0,
+  payload TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX IF NOT EXISTS idx_snapshots_ws ON scan_snapshots(workspace_id, created_at);
+`,
+  },
 ];
 
 import type { DatabaseSync } from 'node:sqlite';
