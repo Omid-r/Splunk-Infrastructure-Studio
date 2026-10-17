@@ -4,6 +4,7 @@ import * as React from 'react';
 import { api } from '@/lib/api';
 import { PageHeader, Card, Button, Badge, Input, Spinner, FadeIn, EmptyState, Modal } from '@/components/ui';
 import { useToast } from '@/components/toast';
+import { LabBundle } from '@/components/lab-bundle';
 import { Boxes, Play, Square, RotateCcw, FileCog, ScrollText, Send, Search, FlaskConical, Terminal } from 'lucide-react';
 import type { LabNode, LabSearchResult, Role, ValidationItem } from '@/lib/types';
 
@@ -189,6 +190,7 @@ export default function LabPage() {
       )}
 
       {nodes.length > 0 && <SearchPanel nodes={nodes} />}
+      {nodes.length > 0 && <LabBundle canOperate={!!canOperate} />}
 
       <ConfModal node={confNode} onClose={() => setConfNode(null)} canOperate={!!canOperate} />
       <LogsModal node={logNode} onClose={() => setLogNode(null)} />
