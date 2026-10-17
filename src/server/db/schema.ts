@@ -260,6 +260,22 @@ CREATE TABLE IF NOT EXISTS diagnostic_runs (
 CREATE INDEX IF NOT EXISTS idx_diag_created ON diagnostic_runs(created_at);
 `,
   },
+  {
+    id: '0005_toolbox_runs',
+    sql: `
+CREATE TABLE IF NOT EXISTS toolbox_runs (
+  id TEXT PRIMARY KEY,
+  tool TEXT NOT NULL,
+  target TEXT NOT NULL,
+  ok INTEGER NOT NULL,
+  summary TEXT NOT NULL,
+  detail TEXT NOT NULL DEFAULT '',
+  actor TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_toolbox_created ON toolbox_runs(created_at);
+`,
+  },
 ];
 
 import type { DatabaseSync } from 'node:sqlite';

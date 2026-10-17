@@ -303,3 +303,14 @@ export interface DiagnosticRun {
   created_by: string;
   created_at: string;
 }
+
+export interface ToolboxRun {
+  id: string;
+  tool: 'ping' | 'traceroute' | 'dns' | 'tcp' | 'http' | 'ports' | 'interfaces';
+  target: string;
+  ok: number;
+  summary: string;
+  detail: string;
+  actor: string;
+  created_at: string;
+}
