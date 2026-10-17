@@ -16,6 +16,7 @@ dist/
 
 # Runtime data (SQLite DB, runtime state) — never commit
 data/
+lab/.lab-data/
 *.sqlite
 *.sqlite3
 
@@ -26,6 +27,9 @@ Thumbs.db
 .idea/
 *.log
 *.tsbuildinfo
+
+# Synthetic DEMO sample inputs are part of the repo, unlike runtime logs
+!lab/sample-data/*.log
 
 # Downloaded reference material (re-obtain via: see docs/reference-catalog.md)
 reference/

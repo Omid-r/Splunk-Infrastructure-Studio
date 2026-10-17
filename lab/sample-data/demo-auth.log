@@ -1,0 +1,11 @@
+# DEMO DATA — synthetic authentication audit trail for the laboratory only.
+# All accounts, source addresses and outcomes are invented. 198.51.100.0/24 and
+# 203.0.113.0/24 are RFC 5737 documentation ranges, never routable hosts.
+2026-10-17T08:02:00.001+03:30 action=demo.login.success user=demo_alice src=198.51.100.10 method=password
+2026-10-17T08:02:04.002+03:30 action=demo.login.failure user=demo_bob src=198.51.100.99 method=password reason=DEMO_BAD_PASSWORD
+2026-10-17T08:02:05.003+03:30 action=demo.login.failure user=demo_bob src=198.51.100.99 method=password reason=DEMO_BAD_PASSWORD
+2026-10-17T08:02:06.004+03:30 action=demo.login.failure user=demo_bob src=198.51.100.99 method=password reason=DEMO_BAD_PASSWORD
+2026-10-17T08:02:07.005+03:30 action=demo.account.locked user=demo_bob src=198.51.100.99 reason=DEMO_THRESHOLD_3
+2026-10-17T08:02:11.006+03:30 action=demo.privilege.change user=demo_carol from=demo_operator to=demo_admin approved_by=demo_secops
+2026-10-17T08:02:14.007+03:30 action=demo.login.success user=demo_dave src=203.0.113.20 method=demo_token
+2026-10-17T08:02:19.008+03:30 action=demo.session.revoked user=demo_dave src=203.0.113.20 reason=DEMO_MANUAL

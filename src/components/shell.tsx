@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, Radar, Network, Server, Boxes, Rocket, ShieldCheck, ScrollText,
-  Settings, Sun, Moon, LogOut, ChevronDown, Sparkles, GitBranch, FlaskConical, Stethoscope, Terminal,
+  Settings, Sun, Moon, LogOut, ChevronDown, Sparkles, GitBranch, FlaskConical, Stethoscope, Terminal, Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button, Badge } from '@/components/ui';
@@ -34,6 +34,7 @@ const NAV = [
   {
     group: 'آزمایشگاه و عیب‌یاری',
     items: [
+      { href: '/lab-env', label: 'محیط آزمایشگاهی', icon: Workflow },
       { href: '/lab', label: 'آزمایشگاه زنده', icon: FlaskConical },
       { href: '/diagnostics', label: 'عیب‌یاری و ترمیم', icon: Stethoscope },
       { href: '/toolbox', label: 'جعبه‌ابزار شبکه', icon: Terminal },

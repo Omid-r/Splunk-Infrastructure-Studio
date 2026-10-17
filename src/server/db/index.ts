@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// SIS_DATA_DIR lets a lab instance keep its own sqlite file + lab artifacts,
+// so experiments never touch the developer's ./data directory.
+const DATA_DIR = process.env.SIS_DATA_DIR
+  ? path.resolve(process.cwd(), process.env.SIS_DATA_DIR)
+  : path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'app.sqlite');
 
 let db: DatabaseSync | null = null;
@@ -12,6 +16,9 @@ export function getDb(): DatabaseSync {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   db = new DatabaseSync(DB_PATH);
   db.exec('PRAGMA journal_mode = WAL;');
+  // Build workers and the dev server can open the same file concurrently; without
+  // this the loser of a write race fails with SQLITE_BUSY instead of waiting.
+  db.exec('PRAGMA busy_timeout = 8000;');
   db.exec('PRAGMA foreign_keys = ON;');
   return db;
 }

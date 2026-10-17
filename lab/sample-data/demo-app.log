@@ -1,0 +1,12 @@
+# DEMO DATA — synthetic log written by hand for this repository's laboratory.
+# Not exported from any real system. Contains no real hostnames, IPs of real
+# machines, users, or credentials. Timestamps are fixed on purpose so results
+# are reproducible when the same file is replayed.
+2026-10-17T08:00:01.014+03:30 level=INFO  event=checkout_started user=demo_shop_1 order_id=DEMO-1001 latency_ms=42
+2026-10-17T08:00:03.881+03:30 level=INFO  event=checkout_done user=demo_shop_1 order_id=DEMO-1001 latency_ms=118 status=200
+2026-10-17T08:00:07.220+03:30 level=WARN  event=slow_query order_id=DEMO-1002 latency_ms=2140 db=demo_orders
+2026-10-17T08:00:09.004+03:30 level=ERROR event=payment_declined order_id=DEMO-1003 code=DEMO_CARD_DECLINED
+2026-10-17T08:00:11.550+03:30 level=INFO  event=checkout_started user=demo_shop_2 order_id=DEMO-1004 latency_ms=39
+2026-10-17T08:00:12.771+03:30 level=INFO  event=cache_miss key=demo_catalog_v2 latency_ms=88
+2026-10-17T08:00:15.330+03:30 level=ERROR event=payment_declined order_id=DEMO-1005 code=DEMO_CARD_DECLINED
+2026-10-17T08:00:18.902+03:30 level=INFO  event=checkout_done user=demo_shop_2 order_id=DEMO-1004 latency_ms=97 status=200
