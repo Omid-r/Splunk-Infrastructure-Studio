@@ -61,4 +61,13 @@ export function setSessionCookie(token: string, expiresAt: Date): void {
   void token;
 }
 
+export async function currentTokenHash(): Promise<string | null> {
+  const jar = await cookies();
+  const signed = jar.get(COOKIE)?.value;
+  if (!signed) return null;
+  const [token, sig] = signed.split('.');
+  if (!token || !sig || !timingSafeEqualStr(sig, hmac(token, sessionSecret()))) return null;
+  return sha256(token);
+}
+
 export { COOKIE as SESSION_COOKIE };

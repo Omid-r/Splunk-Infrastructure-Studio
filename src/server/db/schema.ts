@@ -276,6 +276,19 @@ CREATE TABLE IF NOT EXISTS toolbox_runs (
 CREATE INDEX IF NOT EXISTS idx_toolbox_created ON toolbox_runs(created_at);
 `,
   },
+  {
+    id: '0006_auth_attempts',
+    sql: `
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  ok INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_attempts_pair ON auth_attempts(username, ip, created_at);
+`,
+  },
 ];
 
 import type { DatabaseSync } from 'node:sqlite';

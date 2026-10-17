@@ -5,7 +5,23 @@ import type { Role, User } from '@/lib/types';
 
 const MAX_ATTEMPTS = 5;
 const LOCK_MS = 10 * 60 * 1000;
-const attempts = new Map<string, { count: number; lockedUntil: number }>();
+
+function recordAttempt(username: string, ip: string, ok: boolean): void {
+  run('INSERT INTO auth_attempts (id, username, ip, ok, created_at) VALUES (?, ?, ?, ?, ?)',
+    newId('att'), username, ip, ok ? 1 : 0, new Date().toISOString());
+}
+
+function lockState(username: string, ip: string): { locked: boolean; remainingSec: number } {
+  const fails = all<{ created_at: string }>(
+    'SELECT created_at FROM auth_attempts WHERE username = ? AND ip = ? AND ok = 0 AND created_at > ? ORDER BY created_at DESC LIMIT ?',
+    username, ip, new Date(Date.now() - LOCK_MS).toISOString(), MAX_ATTEMPTS
+  );
+  if (fails.length < MAX_ATTEMPTS) return { locked: false, remainingSec: 0 };
+  const oldest = new Date(fails[fails.length - 1].created_at).getTime();
+  const remaining = LOCK_MS - (Date.now() - oldest);
+  if (remaining <= 0) return { locked: false, remainingSec: 0 };
+  return { locked: true, remainingSec: Math.ceil(remaining / 1000) };
+}
 
 export function userCount(): number {
   return get<{ n: number }>('SELECT COUNT(*) AS n FROM users')?.n ?? 0;
@@ -33,27 +49,26 @@ export interface LoginResult {
 }
 
 export function login(username: string, password: string, ip: string): LoginResult {
-  const key = `${ip}:${username}`;
-  const rec = attempts.get(key);
-  if (rec && rec.lockedUntil > Date.now()) {
-    return { ok: false, error: 'حساب موقتاً قفل شده است؛ دوباره تلاش کنید', lockedRemainingSec: Math.ceil((rec.lockedUntil - Date.now()) / 1000) };
+  const lock = lockState(username, ip);
+  if (lock.locked) {
+    return { ok: false, error: 'حساب موقتاً قفل شده است؛ دوباره تلاش کنید', lockedRemainingSec: lock.remainingSec };
   }
   const user = get<User & { password_hash: string; password_salt: string }>(
     'SELECT * FROM users WHERE username = ? AND is_active = 1', username
   );
   const okPw = user ? verifySafe(password, user.password_hash, user.password_salt) : false;
   if (!user || !okPw) {
-    const next = rec ?? { count: 0, lockedUntil: 0 };
-    next.count += 1;
-    if (next.count >= MAX_ATTEMPTS) {
-      next.lockedUntil = Date.now() + LOCK_MS;
-      next.count = 0;
-    }
-    attempts.set(key, next);
+    recordAttempt(username, ip, false);
     audit(username, 'auth.login_failed', `ip:${ip}`, 'failure', newId('corr'));
-    return { ok: false, error: 'نام کاربری یا رمز عبور نادرست است' };
+    const after = lockState(username, ip);
+    return {
+      ok: false,
+      error: after.locked ? 'حساب موقتاً قفل شده است؛ دوباره تلاش کنید' : 'نام کاربری یا رمز عبور نادرست است',
+      lockedRemainingSec: after.locked ? after.remainingSec : undefined,
+    };
   }
-  attempts.delete(key);
+  recordAttempt(username, ip, true);
+  run('DELETE FROM auth_attempts WHERE username = ? AND ip = ? AND ok = 0', username, ip);
   run('UPDATE users SET last_login_at = ? WHERE id = ?', new Date().toISOString(), user.id);
   const { password_hash, password_salt, ...safe } = user;
   void password_hash; void password_salt;
@@ -87,7 +102,19 @@ export function changePassword(id: string, current: string, next: string): { ok:
   const { hash, salt } = hashPassword(next);
   run('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?', hash, salt, id);
   run('DELETE FROM sessions WHERE user_id = ?', id);
+  const uname = get<{ username: string }>('SELECT username FROM users WHERE id = ?', id)?.username;
+  if (uname) run('DELETE FROM auth_attempts WHERE username = ? AND ok = 0', uname);
   return { ok: true };
+}
+
+export function securityLocks(): { username: string; ip: string; remainingSec: number }[] {
+  const pairs = all<{ username: string; ip: string }>(
+    'SELECT DISTINCT username, ip FROM auth_attempts WHERE ok = 0 AND created_at > ?',
+    new Date(Date.now() - LOCK_MS).toISOString()
+  );
+  return pairs
+    .map((p) => ({ username: p.username, ip: p.ip, remainingSec: lockState(p.username, p.ip).remainingSec }))
+    .filter((p) => p.remainingSec > 0);
 }
 
 export { sha256 };

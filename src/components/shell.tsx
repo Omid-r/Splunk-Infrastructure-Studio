@@ -44,12 +44,13 @@ const NAV = [
     items: [
       { href: '/best-practices', label: 'Best Practiceها', icon: ShieldCheck },
       { href: '/audit', label: 'گزارش‌های حسابرسی', icon: ScrollText, roles: ['auditor', 'admin'] },
+      { href: '/admin', label: 'مدیریت کاربران و امنیت', icon: ShieldCheck, roles: ['admin'] },
       { href: '/settings', label: 'تنظیمات', icon: Settings, roles: ['admin'] },
     ],
   },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   viewer: 'بیننده', network_operator: 'اپراتور شبکه', splunk_admin: 'مدیر Splunk',
   infra_admin: 'مدیر زیرساخت', auditor: 'حسابرس', admin: 'مدیر سیستم',
 };
