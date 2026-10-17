@@ -6,11 +6,14 @@ spool رویدادها و لاگ‌های آزمایش همگی داخل `lab/.l
 
 ## اجرا
 
+ساده‌ترین راه در ویندوز: دابل‌کلیک روی **`lab\start-lab.cmd`** — `node.exe` را خودش پیدا می‌کند، سرور را بالا می‌آورد و وقتی واقعاً پاسخ داد مرورگر را باز می‌کند.
+
 ```bash
 node lab/start-lab.mjs              # http://127.0.0.1:8553  (حالت dev)
 node lab/start-lab.mjs --port=8600  # پورت دیگر
 node lab/start-lab.mjs --prod       # بعد از `npm run build`
 node lab/start-lab.mjs --reset      # حذف کامل داده‌های آزمایشگاه و شروع از صفر
+node lab/start-lab.mjs --no-open    # بدون باز کردن خودکار مرورگر
 ```
 
 اگر `npm` در `PATH` شما کار نمی‌کند، همان فایل را با نود مستقیم اجرا کنید:

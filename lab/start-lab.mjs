@@ -10,6 +10,7 @@
 //   node lab/start-lab.mjs --fresh-admin   # also skip setup by seeding admin
 //
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -101,3 +102,21 @@ const child = spawn(process.execPath, args, {
   },
 });
 child.on('exit', (code) => process.exit(code ?? 0));
+
+// Double-click users have no terminal feedback loop, so open the browser once the
+// server actually answers rather than immediately (next dev needs a few seconds).
+if (!has('no-open')) {
+  const base = `http://127.0.0.1:${port}`;
+  const deadline = Date.now() + 120_000;
+  const timer = setInterval(() => {
+    const req = http.get(`${base}/login`, (res) => {
+      res.resume();
+      if (res.statusCode === 200) {
+        clearInterval(timer);
+        spawn(process.platform === 'win32' ? 'cmd.exe' : 'xdg-open', process.platform === 'win32' ? ['/c', 'start', '', base] : [base], { detached: true, stdio: 'ignore' }).unref();
+      }
+    });
+    req.on('error', () => { if (Date.now() > deadline) clearInterval(timer); });
+    req.setTimeout(1500, () => req.destroy());
+  }, 1500);
+}
