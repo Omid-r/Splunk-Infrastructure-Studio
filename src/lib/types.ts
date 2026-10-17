@@ -274,3 +274,32 @@ export interface LabSearchResult {
   per_node: Record<string, number>;
   completed_at: string;
 }
+
+export type DiagnosticFixKind =
+  | 'start-node'
+  | 'restart-node'
+  | 'enable-splunktcp'
+  | 'start-target-node'
+  | 'create-spool-dir'
+  | null;
+
+export interface DiagnosticItem {
+  id: string;
+  node: string | null;
+  nodeId: string | null;
+  check: string;
+  status: 'pass' | 'warn' | 'fail';
+  detail: string;
+  fixKind: DiagnosticFixKind;
+  fixNote: string | null;
+  fixTarget: string | null;
+}
+
+export interface DiagnosticRun {
+  id: string;
+  workspace_id: string;
+  items: DiagnosticItem[];
+  summary: string;
+  created_by: string;
+  created_at: string;
+}

@@ -246,6 +246,20 @@ CREATE TABLE IF NOT EXISTS lab_nodes (
 CREATE INDEX IF NOT EXISTS idx_lab_nodes_ws ON lab_nodes(workspace_id);
 `,
   },
+  {
+    id: '0004_diagnostic_runs',
+    sql: `
+CREATE TABLE IF NOT EXISTS diagnostic_runs (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+  items TEXT NOT NULL DEFAULT '[]',
+  summary TEXT NOT NULL DEFAULT '',
+  created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_diag_created ON diagnostic_runs(created_at);
+`,
+  },
 ];
 
 import type { DatabaseSync } from 'node:sqlite';
